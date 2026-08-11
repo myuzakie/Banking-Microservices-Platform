@@ -47,6 +47,9 @@ To get started, follow these steps to run the application on your local applicat
 - Some microservices and APIs may depend on others being up and running. Ensure that all necessary microservices and APIs are up and functioning correctly to avoid any issues in the application workflow.
 
 <h2>📖 Documentation</h2>
+
+Panduan lokal (bahasa Indonesia): **[docs/](./docs/README.md)** — gambaran besar, alur bisnis, dan setup lengkap agar bisa dijalankan dari nol.
+
 <h3>📂 Microservices Documentation</h3>
 
 For detailed information about each microservice, refer to their respective README files:
