@@ -1,93 +1,239 @@
-<h1 align="center">🌟 Spring-Boot-Microservices-Banking-Application 🌟</h1>
-<h2>📋 Table of Contents</h2>
+## About This Project
 
-- [🔍 About](#-about)
-- [🏛️ Architecture](#-architecture)
-- [🚀 Microservices](#-microservices)
-- [🚀 Getting Started](#-getting-started)
-- [📖 Documentation](#-documentation)
-- [⌚ Future Enhancement](#-future-enhancement)
-- [🤝 Contribution](#-contribution)
-- [📞 Contact Information](#-contact-information)
+This repository is based on the original project:
 
-## 🔍 About
-<p>
-    The Banking Application is built using a microservices architecture, incorporating the Spring Boot framework along with other Spring technologies such as Spring Data JPA, Spring Cloud, and Spring Security, alongside tools like Maven for dependency management. These technologies play a crucial role in establishing essential components like Service Registry, API Gateway, and more.<br><br>
-    Moreover, they enable us to develop independent microservices such as the user service for user management, the account service for account generation and other related functionalities, the fund transfer service for various transfer operations, and the transaction service for viewing transactions and facilitating withdrawals and deposits. These technologies not only streamline development but also enhance scalability and maintainability, ensuring a robust and efficient banking system.
-</p>
+**[Spring Boot Microservices Banking Application](https://github.com/kartik1502/Spring-Boot-Microservices-Banking-Application)** by **Kartik**.
 
-## 🏛️ Architecture
+The original project provides a banking backend built with Spring Boot and a microservices architecture.
 
-- **Service Registry:** The microservices uses the discovery service for service registration and service discovery, this helps the microservices to discovery and communicate with other services, without needing to hardcode the endpoints while communicating with other microservices.
+This repository is maintained as a **personal learning and engineering project**. The original implementation is kept as the starting point, while future commits may introduce refactoring, architectural improvements, security improvements, testing, and other enhancements.
 
-- **API Gateway:** This microservices uses the API gateway to centralize the API endpoint, where all the endpoints have common entry point to all the endpoints. The API Gateway also facilitates the Security inclusion where the Authorization and Authentication for the Application.
+### Why This Repository Exists
 
-- **Database per Microservice:** Each of the microservice have there own dedicated database. Here for this application for all the microservices we are incorparating the MySQL database. This helps us to isolate each of the services from each other which facilitates each services to have their own data schemas and scale each of the database when required.
+The purpose is to study how an existing microservices application works before modifying its architecture.
+
+The development approach is:
+
+```text
+Original Project
+      ↓
+Understand the existing system
+      ↓
+Document the baseline architecture
+      ↓
+Refactor
+      ↓
+Add improvements
+      ↓
+Compare the results
+
+```
+
+The original implementation is therefore treated as the **baseline version** of this project.
+
+---
+
+## Baseline Architecture
+
+The original application is a banking system composed of several Spring Boot microservices.
+
+It supports:
+
+- Customer registration
+- Bank account creation
+- Deposit and withdrawal
+- Account-to-account transfers
+- JWT authentication
+- Service discovery
+- Synchronous service-to-service communication
+
+There is no frontend in this repository. APIs can be tested using Postman or `curl`.
+
+```mermaid
+flowchart TB
+  Client[Client / Postman] --> GW[API Gateway :8080]
+  GW --> KC[Keycloak :8571]
+  GW --> EU[Eureka :8761]
+
+  GW --> US[User Service :8082]
+  GW --> AS[Account Service :8081]
+  GW --> TS[Transaction Service :8084]
+  GW --> FT[Fund Transfer :8085]
+  GW --> SG[Sequence Generator :8083]
+
+  US --> DB1[(MySQL)]
+  AS --> DB2[(MySQL)]
+  TS --> DB3[(MySQL)]
+  FT --> DB4[(MySQL)]
+  SG --> DB5[(MySQL)]
+
+  US -.->|Admin API| KC
+
+  US -->|Feign| AS
+  AS -->|Feign| US
+  AS -->|Feign| SG
+  AS -->|Feign| TS
+  TS -->|Feign| AS
+  FT -->|Feign| AS
+  FT -->|Feign| TS
+
+```
 
 
-<h2>🚀 Microservices</h2>
 
-- **👤 User Service:** The user microservice provides functionalities for user management. This includes user registration, updating user details, viewing user information, and accessing all accounts associated with the user. Additionally, this microservice handles user authentication and authorization processes.
+## Services
 
-- **💼 Account Service:** The account microservice manages account-related APIs. It enables users to modify account details, view all accounts linked to the user profile, access transaction histories for each account, and supports the account closure process.
 
-- **💸 Fund Transfer Service:** The fund transfer microservice facilitates various fund transfer-related functionalities. Users can initiate fund transfers between different accounts, access detailed fund transfer records, and view specific details of any fund transfer transaction.
+| Service             | Port   | Responsibility                                   |
+| ------------------- | ------ | ------------------------------------------------ |
+| Service Registry    | `8761` | Eureka service discovery                         |
+| API Gateway         | `8080` | API entry point and JWT validation               |
+| Account Service     | `8081` | Bank account management                          |
+| User Service        | `8082` | Customer management and Keycloak synchronization |
+| Sequence Generator  | `8083` | Account number generation                        |
+| Transaction Service | `8084` | Deposits, withdrawals, and transaction ledger    |
+| Fund Transfer       | `8085` | Account-to-account transfers                     |
 
-- **💳 Transactions Service:** The transaction service offers a range of transaction-related services. Users can view transactions based on specific accounts or transaction reference IDs, as well as make deposits or withdrawals from their accounts.
 
-<h2>🚀 Getting Started</h2>
+## Service Communication
 
-To get started, follow these steps to run the application on your local application:
+Business services communicate through **synchronous HTTP using OpenFeign**.
 
-- Make sure you have Java 17 installed on your system. You can download it from the official Oracle website.
-- Select an Integrated Development Environment (IDE) such as Eclipse, Spring Tool Suite, or IntelliJ IDEA. Configure the IDE according to your preferences.
-- Clone the repository containing the microservices onto your local system using Git. Navigate to the directory where you have cloned the repository.
-- Navigate to each microservice directory within the cloned repository and run the application. You can do this by using your IDE or running specific commands depending on the build tool used (e.g., Maven or Gradle).
-- Set up Keycloak for authentication and authorization. Refer to the detailed configuration guide provided [here](https://devscribbles.hashnode.dev/mastering-microservices-authentication-and-authorization-with-keycloak) for step-by-step instructions on configuring Keycloak for your microservices.
-- Some microservices and APIs may depend on others being up and running. Ensure that all necessary microservices and APIs are up and functioning correctly to avoid any issues in the application workflow.
+Eureka provides service discovery so services can communicate using logical service names instead of hard-coded host addresses.
 
-<h2>📖 Documentation</h2>
+```mermaid
+flowchart LR
+  US[User Service] --> AS[Account Service]
+  AS --> US
+  AS --> SG[Sequence Generator]
+  AS --> TS[Transaction Service]
+  TS --> AS
+  FT[Fund Transfer] --> AS
+  FT --> TS
 
-Panduan lokal (bahasa Indonesia): **[docs/](./docs/README.md)** — gambaran besar, alur bisnis, dan setup lengkap agar bisa dijalankan dari nol.
+```
 
-<h3>📂 Microservices Documentation</h3>
 
-For detailed information about each microservice, refer to their respective README files:
 
-- [👤 User Service](./User-Service/README.md)
-- [💼 Account Service](./Account-Service/README.md)
-- [💸 Fund Transfer Service](./Fund-Transfer/README.md)
-- [💳 Transactions Service](./Transaction-Service/README.md)
+The API Gateway handles external client traffic. It is not part of the internal Feign communication chain.
 
-<h3>📖 API Documentation</h3>
+---
 
-For a detailed guide on API endpoints and usage instructions, explore our comprehensive [API Documentation](https://app.theneo.io/student/spring-boot-microservices-banking-application). This centralized resource offers a holistic view of the entire banking application, making it easier to understand and interact with various services.
+## API Gateway
 
-<h3>📚 Java Documentation (JavaDocs)</h3>
+External API requests use:
 
-Explore the linked [Java Documentation](https://kartik1502.github.io/Spring-Boot-Microservices-Banking-Application/) to delve into detailed information about classes, methods, and variables across all microservices. These resources are designed to empower developers by providing clear insights into the codebase and facilitating seamless development and maintenance tasks.
+```text
+http://localhost:8080
 
-## ⌚ Future Enhancement
+```
 
-As part of our ongoing commitment to improving the banking application, we are planning several enhancements to enrich user experience and expand functionality:
 
-- Implementing a robust notification system will keep users informed about important account activities, such as transaction updates, account statements, and security alerts. Integration with email and SMS will ensure timely and relevant communication.
-- Adding deposit and investment functionalities will enable users to manage their savings and investments directly through the banking application. Features such as fixed deposits, recurring deposits, and investment portfolio tracking will empower users to make informed financial decisions.
-- and more....
+| Route                | Target              |
+| -------------------- | ------------------- |
+| `/api/users/**`      | User Service        |
+| `/accounts/**`       | Account Service     |
+| `/transactions/**`   | Transaction Service |
+| `/fund-transfers/**` | Fund Transfer       |
+| `/sequence/**`       | Sequence Generator  |
 
-<h2>🤝 Contribution</h2>
 
-Contributions to this project are welcome! Feel free to open issues, submit pull requests, or provide feedback to enhance the functionality and usability of this banking application. Follow the basic PR specification while creating a PR.
+> The transfer endpoint uses `/fund-transfers/**`, not `/api/fund-transfers/**`.
 
-Let's build a robust and efficient banking system together using Spring Boot microservices!
+---
 
-Happy Banking! 🏦💰
+## Security
 
-<h2>📞 Contact Information</h2>
+The baseline implementation uses **Keycloak and JWT**.
 
-If you have any questions, feedback, or need assistance with this project, please feel free to reach out to me:
+Current security behavior:
 
-[![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/6361921186)
-[![GMAIL](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:kartikkulkarni1411@gmail.com)
+- JWT validation is performed at the API Gateway.
+- `/api/users/register` is publicly accessible.
+- Other gateway endpoints require a Bearer token.
+- Direct access to ports `8081–8085` does not enforce JWT validation.
+- User Service uses the Keycloak Admin API to create and manage users.
 
-We appreciate your interest in our project and look forward to hearing from you. Happy coding!
+Direct service access is primarily useful for local development and debugging.
+
+---
+
+## Technology Stack
+
+- Java 17
+- Spring Boot 2.7.x
+- Spring Cloud 2021.0.8
+- Spring Cloud Gateway
+- Spring Cloud Netflix Eureka
+- Spring Cloud OpenFeign
+- Spring Data JPA
+- MySQL
+- Keycloak
+- Maven
+
+The baseline implementation does not use Kafka or RabbitMQ.
+
+---
+
+## Repository Structure
+
+Each service is an **independent Maven project**.
+
+```text
+Banking-Microservices-Platform/
+├── Service-Registry/
+├── API-Gateway/
+├── User-Service/
+├── Account-Service/
+├── Sequence-Generator/
+├── Transaction-Service/
+├── Fund-Transfer/
+├── postman_collection/
+└── docs/
+
+```
+
+This is not a Maven multi-module project and does not use a shared parent POM.
+
+---
+
+## Evolution Roadmap
+
+The repository will evolve from the original implementation toward a more production-oriented architecture.
+
+Potential improvements include:
+
+```text
+Baseline
+   │
+   ├── Code & package refactoring
+   ├── API design improvements
+   ├── Database & transaction improvements
+   ├── Security hardening
+   ├── Automated testing
+   ├── Error handling
+   ├── Observability
+   ├── Performance improvements
+   ├── Containerization
+   └── Distributed system improvements
+
+```
+
+Each major improvement may be documented separately under `docs/`.
+
+The goal is not simply to rewrite the original project, but to understand **why** each architectural change is necessary and what trade-offs it introduces.
+
+---
+
+## Attribution
+
+The initial implementation is based on:
+
+**Spring Boot Microservices Banking Application**  
+Original author: **Kartik**
+
+Original repository:
+
+[https://github.com/kartik1502/Spring-Boot-Microservices-Banking-Application](https://github.com/kartik1502/Spring-Boot-Microservices-Banking-Application)
+
+This repository is a personal derivative/learning project. Original source code and attribution are retained where applicable.
